@@ -62,7 +62,7 @@ Taken together, these models prove that even with limited flights and a single d
 
 Seeing the models inside Cesium was the moment when the project really felt real. Instead of staring at meshes in a standalone viewer, we could fly around UT Tower and the stadium in a proper map context: zooming from a city-scale view down to individual architectural details, tilting the camera to match real-world photos we had taken on the ground, and toggling between different captured sites.
 
-In the original web project, we embed a Cesium viewer directly into the page using an `iframe` whose `src` points to a small Cesium demo (`/assets/projects/austin3d/cesium.html`). The viewer streams the tower and stadium tilesets, and users can pan, zoom, and tilt as if they were holding a tiny virtual drone in their browser. Even with just a couple of landmarks, that experience feels like a hint of what a fully scanned campus could become.
+We have a small Cesium demo (`index.html`). The viewer streams the tower and stadium tilesets, and users can pan, zoom, and tilt as if they were holding a tiny virtual drone in their browser. Even with just a couple of landmarks, that experience feels like a hint of what a fully scanned campus could become.
 
 ---
 
