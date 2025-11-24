@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UT Austin Campus with CesiumJS</title>
+    <!-- Include CesiumJS Library -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.82/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.82/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        /* Ensure the Cesium container fills the entire viewport */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        /* Instructions Overlay */
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(42, 42, 42, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            z-index: 1;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Instructions for Users -->
+    <div id="instructions">
+        <strong>Instructions:</strong>
+        <ul>
+            <li>Scroll to zoom in/out</li>
+            <li>Click and drag to pan</li>
+            <li>Right-click and drag to rotate the view</li>
+            <li>Use the navigation controls on the top-right corner</li>
+        </ul>
+    </div>
+
+    <!-- Cesium Container -->
+    <div id="cesiumContainer" style="width: 100%; height: 100vh;"></div>
+
+    <script>
+        // Initialize Cesium Viewer with default controls
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3ODhiN2NhYi02NzgxLTQ2OWQtOTAzMi02ZTgwYmNjMGJmYjYiLCJpZCI6MTM4NjUzLCJpYXQiOjE2ODQxMTUyNDV9.yzVSoiedb3diO7rOG9kd9Luuamx4Wjnieson-zb3vvk';
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(),
+            // Enable or disable various UI components as needed
+            animation: true,
+            timeline: true,
+            navigationHelpButton: true,
+            sceneModePicker: true,
+            homeButton: true,
+            geocoder: true,
+            baseLayerPicker: true,
+            fullscreenButton: true
+        });
+
+        // Optional: Adjust lighting to minimize direct lighting
+        viewer.scene.light = new Cesium.DirectionalLight({
+            direction: Cesium.Cartesian3.negate(Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3()), // Light coming from above
+            intensity: 0.5 // Adjust intensity as needed
+        });
+
+        // -------------------------------
+        // UT TOWER IMPORT
+        // -------------------------------
+
+        // Define offsets for longitude and latitude in degrees
+        const towerLongitudeOffset = 0.0025; // Adjust as needed
+        const towerLatitudeOffset = -0.00025; // Adjust as needed
+
+        // Original Coordinates
+        const originalTowerLongitude = -97.7419629;
+        const originalTowerLatitude = 30.2862175;
+
+        // Apply offsets to original coordinates
+        const towerLongitude = originalTowerLongitude + towerLongitudeOffset;
+        const towerLatitude = originalTowerLatitude + towerLatitudeOffset;
+
+        const towerScale = 37; // Adjust scale as needed
+        const towerHeightAdjustment = 209; // Adjust height as needed
+
+        // Correct orientation by adjusting heading, pitch, and roll for UT Tower
+        const towerHeading = Cesium.Math.toRadians(-45); // Example, adjust as needed
+        const towerPitch = Cesium.Math.toRadians(0); // Typically 0, adjust if needed
+        const towerRoll = Cesium.Math.toRadians(0); // Typically 0, adjust if needed
+        const towerOrientation = Cesium.Transforms.headingPitchRollQuaternion(
+            Cesium.Cartesian3.fromDegrees(towerLongitude, towerLatitude, towerHeightAdjustment),
+            new Cesium.HeadingPitchRoll(towerHeading, towerPitch, towerRoll)
+        );
+
+        // Add UT Tower with offset, scale, height, and orientation adjustments
+        viewer.entities.add({
+            name: 'UT Tower',
+            position: Cesium.Cartesian3.fromDegrees(towerLongitude, towerLatitude, towerHeightAdjustment),
+            orientation: towerOrientation,
+            model: {
+                uri: 'tower.glb', // Ensure this path is correct
+                scale: towerScale,
+            }
+        });
+
+        // -------------------------------
+        // UT STADIUM IMPORT
+        // -------------------------------
+
+        const stadiumLongitudeOffset = 0.00090; // Adjust as needed
+        const stadiumLatitudeOffset = 0.00045; // Adjust as needed
+
+        // Original Coordinates
+        const originalStadiumLongitude = -97.7338591;
+        const originalStadiumLatitude = 30.2830598;
+
+        // Apply offsets to original coordinates
+        const stadiumLongitude = originalStadiumLongitude + stadiumLongitudeOffset;
+        const stadiumLatitude = originalStadiumLatitude + stadiumLatitudeOffset;
+
+        const stadiumHeight = 205; // Adjust height as needed
+
+        const stadiumHeading = Cesium.Math.toRadians(80); // Example, adjust as needed
+        const stadiumPitch = Cesium.Math.toRadians(0); // Typically 0, adjust if needed
+        const stadiumRoll = Cesium.Math.toRadians(7); // Typically 0, adjust if needed
+
+        const stadiumOrientation = Cesium.Transforms.headingPitchRollQuaternion(
+            Cesium.Cartesian3.fromDegrees(stadiumLongitude, stadiumLatitude, stadiumHeight),
+            new Cesium.HeadingPitchRoll(stadiumHeading, stadiumPitch, stadiumRoll)
+        );
+
+        // Add UT Stadium with offset, scale, height, and orientation adjustments
+        viewer.entities.add({
+            name: 'UT Stadium',
+            position: Cesium.Cartesian3.fromDegrees(stadiumLongitude, stadiumLatitude, stadiumHeight),
+            orientation: stadiumOrientation,
+            model: {
+                uri: 'stadium.glb', // Ensure this path is correct
+                scale: 37, // Adjust scale as needed
+                orientation: stadiumOrientation
+            }
+        });
+
+        // -------------------------------
+        // CAMERA CONTROL WITH AUTO-ROTATION
+        // -------------------------------
+
+        // Initial camera fly-to parameters
+        const initialDestination = Cesium.Cartesian3.fromDegrees(towerLongitude, towerLatitude, 200); // Adjust altitude as needed
+        const initialOrientation = {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-30),
+            roll: 0.0
+        };
+
+        // Fly the camera to the initial position near the UT Tower
+        viewer.camera.flyTo({
+            destination: initialDestination,
+            orientation: initialOrientation,
+            duration: 3, // Duration in seconds
+            complete: startAutoRotate // Callback to start auto-rotation after fly-to
+        });
+
+        let isRotating = true; // Flag to control rotation
+
+        function startAutoRotate() {
+            if (!isRotating) return;
+
+            const center = Cesium.Cartesian3.fromDegrees(towerLongitude, towerLatitude, towerHeightAdjustment);
+            const radius = 250; // Distance from the center
+            let heading = 0;
+
+            // Create a new clock instance for smooth rotation
+            viewer.clock.shouldAnimate = true;
+
+            // Auto-rotation implemented using a clock tick event
+            const autoRotateHandler = viewer.clock.onTick.addEventListener(function(clock) {
+                if (!isRotating) {
+                    viewer.clock.onTick.removeEventListener(autoRotateHandler);
+                    return;
+                }
+
+                // Increment heading for rotation
+                heading += Cesium.Math.toRadians(0.1); // Adjust rotation speed as needed
+
+                // Calculate new camera position using heading
+                const newPosition = Cesium.Cartesian3.fromDegrees(
+                    towerLongitude,
+                    towerLatitude,
+                    radius,
+                    Cesium.Ellipsoid.WGS84,
+                    new Cesium.Cartesian3()
+                );
+
+                // Use a heading-pitch-range to define the camera position relative to the center
+                const cameraPosition = Cesium.Cartesian3.fromRadians(
+                    Cesium.Math.toRadians(towerLongitude),
+                    Cesium.Math.toRadians(towerLatitude),
+                    radius
+                );
+
+                // Update camera position with new heading
+                viewer.camera.lookAt(
+                    center,
+                    new Cesium.HeadingPitchRange(heading, Cesium.Math.toRadians(-30), radius)
+                );
+            });
+
+            // Event listeners to detect user interactions and stop auto-rotation
+            const stopRotationEvents = [
+                Cesium.ScreenSpaceEventType.LEFT_DOWN,
+                Cesium.ScreenSpaceEventType.RIGHT_DOWN,
+                Cesium.ScreenSpaceEventType.MIDDLE_DOWN,
+                Cesium.ScreenSpaceEventType.WHEEL,
+                Cesium.ScreenSpaceEventType.PINCH_START,
+                Cesium.ScreenSpaceEventType.PINCH_END,
+                Cesium.ScreenSpaceEventType.MOUSE_MOVE,
+                Cesium.ScreenSpaceEventType.TOUCH_START,
+                Cesium.ScreenSpaceEventType.TOUCH_MOVE
+            ];
+
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+            stopRotationEvents.forEach(eventType => {
+                handler.setInputAction(() => {
+                    if (isRotating) {
+                        isRotating = false;
+                        viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY); // Reset camera transform
+                        viewer.clock.onTick.removeEventListener(autoRotateHandler); // Remove rotation handler
+                    }
+                }, eventType);
+            });
+
+            // Optional: Provide a way to restart rotation, e.g., a button
+            // You can implement this as needed
+        }
+
+        // -------------------------------
+        // OPTIONAL: Provide a Button to Restart Auto-Rotation
+        // -------------------------------
+        /*
+        // Create a button to restart auto-rotation
+        const rotateButton = document.createElement('button');
+        rotateButton.innerHTML = 'Start Rotation';
+        rotateButton.style.position = 'absolute';
+        rotateButton.style.top = '10px';
+        rotateButton.style.right = '10px';
+        rotateButton.style.zIndex = '1';
+        rotateButton.style.padding = '10px';
+        rotateButton.style.backgroundColor = 'rgba(42, 42, 42, 0.8)';
+        rotateButton.style.color = 'white';
+        rotateButton.style.border = 'none';
+        rotateButton.style.borderRadius = '4px';
+        rotateButton.style.cursor = 'pointer';
+        document.body.appendChild(rotateButton);
+
+        rotateButton.addEventListener('click', () => {
+            if (!isRotating) {
+                isRotating = true;
+                startAutoRotate();
+            }
+        });
+        */
+    </script>
+</body>
+</html>
